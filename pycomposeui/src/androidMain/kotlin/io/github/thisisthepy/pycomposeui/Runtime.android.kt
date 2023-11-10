@@ -9,7 +9,6 @@ import com.chaquo.python.PyObject
  */
 @JvmName("ComposableTemplate")
 @Composable
-fun ComposableTemplate(content: PyObject, vararg args: Any) {
-    println(content)
-    doCompose(content, *args)
+fun ComposableTemplate(content: PyObject) {
+    doCompose(content)
 }

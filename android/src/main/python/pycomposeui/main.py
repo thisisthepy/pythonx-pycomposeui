@@ -1,5 +1,5 @@
 from pycomposeui.runtime import Composable, EmptyComposable
-from pycomposeui.material3 import SimpleText, SimpleColumn
+from pycomposeui.material3 import SimpleText, _SimpleColumn
 
 from java import jclass
 import traceback
@@ -18,7 +18,7 @@ def ColumnContent(content: Composable = EmptyComposable):
 @Composable
 class UiTest:
     def compose(self, content: Composable = EmptyComposable):
-        SimpleColumn(lambda: ColumnContent(content))
+        _SimpleColumn(lambda: ColumnContent(content), Composable.composer, 1)
 
 
 @Composable

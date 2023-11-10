@@ -21,10 +21,9 @@ try:
 
     @Composable
     class SimpleColumn(Composable):
-        @classmethod
-        def compose(cls, content):
-            print(content)
-            _SimpleColumn(ComposableTemplate(content, [], cls.composer, 1), cls.composer, 1)
+        def compose(self, content):
+            print("Hi there? ", content, self.__dict__)
+            _SimpleColumn(content, self.composer, 1)
 
     _AnnotatedStringText = _material3.AnnotatedStringTextWidget
     #AnnotatedStringText = lambda composer, *args, **kwargs: _AnnotatedStringText(*args, **kwargs, composer, 1)

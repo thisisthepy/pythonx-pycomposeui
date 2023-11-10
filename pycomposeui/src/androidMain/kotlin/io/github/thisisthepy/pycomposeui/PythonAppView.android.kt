@@ -105,11 +105,10 @@ fun runPy(functionName: String, moduleName: String = moduleNamePreset, vararg ar
     }
 }
 
-fun doCompose(content: PyObject, vararg args: Any): PyObject {
+fun doCompose(content: PyObject) {
     //return runPy("do_compose", "pycomposeui.runtime", content, *args)
     val module = getPyModule("pycomposeui.runtime")
-    println(args.toList())
-    return module.callAttr("do_compose", content)
+    module.callAttr("do_compose", { content })
 }
 
 @Composable

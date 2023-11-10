@@ -28,9 +28,11 @@ try:
     print("Composable Lambda:", ComposableLambdaImpl)
 
 
-    def do_compose(content: Composable, *args):
+    def do_compose(content):
         """ Run a composition triggered by Kotlin side """
-        return content(*args)
+        wrapped = content()
+        print("inside of do_compose:", wrapped)
+        return wrapped()
 
 
     class Composable:
