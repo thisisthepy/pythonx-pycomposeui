@@ -1,4 +1,6 @@
 from pycomposeui.runtime import Composable, EmptyComposable
+from pycomposeui.ui import Modifier, Alignment
+from pycomposeui.layout import Arrangement
 
 from java import jclass
 import traceback
@@ -24,8 +26,11 @@ try:
     @Composable
     class SimpleColumn(Composable):
         @classmethod
-        def compose(cls, content):
-            _SimpleColumn(content, cls.composer, 1)
+        def compose(cls, modifier: Modifier,
+                    vertical_arrangement: Arrangement.Vertical = Arrangement.Center,
+                    horizontal_alignment: Alignment.Horizontal = Alignment.Horizontal.Start,
+                    content=lambda: {}):
+            _SimpleColumn(modifier, vertical_arrangement, horizontal_alignment, content, cls.composer, 1)
 
     @Composable
     class SimpleRow(Composable):

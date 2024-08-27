@@ -7,4 +7,5 @@ plugins {
     alias(libs.plugins.jetpack.compose).apply(false)
 
     alias(libs.plugins.chaquo.python).apply(false)
+    alias(libs.plugins.moko.resources).apply(false)
 }

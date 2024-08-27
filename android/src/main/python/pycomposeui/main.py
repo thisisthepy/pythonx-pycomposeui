@@ -1,5 +1,6 @@
 from pycomposeui.runtime import Composable, EmptyComposable, remember_saveable
 from pycomposeui.material3 import SimpleText, SimpleColumn, SimpleRow, SimpleButton
+from pycomposeui.ui import modifier, Alignment
 
 from java import jclass
 import traceback
@@ -13,7 +14,7 @@ def UiTestCase(text: str = "UiTestCase"):
 @Composable
 class UiTest:
     def compose(self, content: Composable = EmptyComposable):
-        SimpleColumn(lambda: {
+        SimpleColumn(modifier, content=lambda: {
             UiTestCase(text="UiTestCase in UiTest"),
             content()
         })
@@ -30,7 +31,7 @@ class BasicText:
 class RichText(Composable):
     @staticmethod
     def compose(content: Composable = EmptyComposable):
-        SimpleColumn(Composable(lambda: {
+        SimpleColumn(modifier, content=Composable(lambda: {
             BasicText("Basic Text inside of Rich Text"),
             SimpleRow(lambda: {  # Unlike Kotlin Compose, pycompose does not require Composable functions as content parameters
                 BasicText("Row Left Side  "),
@@ -47,7 +48,10 @@ class App(Composable):
         hi = remember_saveable("Hi?")
         count = remember_saveable(0)
 
-        SimpleColumn(lambda: {
+        def run_client():
+            import pycomposeui.client
+
+        SimpleColumn(modifier, content=lambda: {
             UiTest(),
             RichText(),
             SimpleText(hi.getValue()),
@@ -67,6 +71,15 @@ class App(Composable):
                 },
                 content=lambda: {
                     SimpleText(f"Button 2: Clicked {count.getValue()}")
+                }
+            ),
+            SimpleButton(
+                onclick=lambda: {
+                    print("Run Client"),
+                    run_client()
+                },
+                content=lambda: {
+                    SimpleText("Run Client")
                 }
             )
         })

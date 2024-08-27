@@ -13,6 +13,7 @@ koin = "3.4.0"
 chaquo = "15.0.0"
 stately-concurrent-collections = "2.0.0"
 toasterAtSnackBar = "1.0.3"
+moko-resources = "0.23.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -29,6 +30,7 @@ ktor-ios = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 stately-concurrent-collections = { module = "co.touchlab:stately-concurrent-collections", version.ref = "stately-concurrent-collections" }
 toasterAtSnackBar = { module = "io.github.untactorder:toasterAtSnackBar", version.ref = "toasterAtSnackBar" }
+moko-resources = { module = "dev.icerock.moko:resources-compose", version.ref = "moko-resources" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -39,3 +41,4 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 kotlin-cocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }
 jetpack-compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 chaquo-python = { id = "com.chaquo.python", version.ref = "chaquo" }
+moko-resources = { id = "dev.icerock.mobile.multiplatform-resources", version.ref = "moko-resources" }

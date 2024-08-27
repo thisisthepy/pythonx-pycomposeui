@@ -5,6 +5,7 @@ plugins {
     //alias(libs.plugins.kotlin.cocoapods)
 
     alias(libs.plugins.chaquo.python)
+    alias(libs.plugins.moko.resources)
 }
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
@@ -50,6 +51,7 @@ kotlin {
                 api(compose.material3)
                 implementation(libs.ktor.core)
                 implementation(libs.koin.core)
+                api(libs.moko.resources)
             }
         }
         val commonTest by getting {
@@ -64,6 +66,7 @@ kotlin {
                 implementation(libs.ktor.jvm)
                 implementation(libs.toasterAtSnackBar)
             }
+            dependsOn(commonMain)
         }
         val desktopMain by getting {
             dependencies {
@@ -113,4 +116,9 @@ android {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
         }
     }
+}
+
+multiplatformResources {
+    multiplatformResourcesPackage = "io.github.thisisthepy.pycomposeui.test"
+    multiplatformResourcesClassName = "MR"
 }
