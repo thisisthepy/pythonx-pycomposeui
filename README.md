@@ -8,10 +8,10 @@ Python Wrapper for Kotlin Compose Multiplatform.
 
 
 #### Maintainer
-| Name       | Detailed Part       | Period     |
-|------------|---------------------|------------|
-| @b-re-w    | Composable Runtime  | 2023 ~ now |
-| @rnoro5122 | Material3           | 2024 ~ now |
+| Name                                       | Detailed Part       | Period     |
+|--------------------------------------------|---------------------|------------|
+| [@b-re-w](https://github.com/b-re-w)       | Composable Runtime  | 2023 ~ now |
+| [@rnoro5122](https://github.com/rnoro5122) | Material3           | 2024 ~ now |
 
 
 
