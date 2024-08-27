@@ -3,7 +3,6 @@ from inspect import isfunction
 import traceback
 
 from java import jclass
-from java.chaquopy import JavaClass
 
 
 def cp_info(target, ori):
@@ -85,7 +84,8 @@ try:
             content = kwargs.pop("content", None)
 
             try:
-                if isinstance(content, JavaClass) or isinstance(content, ComposableLambdaImpl):
+                if isinstance(content, ComposableLambdaImpl):  # isinstance(content, JavaClass)
+                    # TODO: Find a way to check if the content is a JavaClass
                     content = KotlinComposable(content)  # Raw Kotlin Composable
                 elif content is None or callable(content):  # In case of None, Function, Method
                     pass
