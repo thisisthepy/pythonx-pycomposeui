@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycomposeui"
+version = "0.0.1"
+dependencies = [
+]
+#dependencies-kotlin = [
+#    "org.jetbrains.compose:compose-ui:0.4.0",
+#]
+requires-python = ">= 3.8"
+#requires-kotlin = ">= 1.4.32"
+#authors = [
+#    {name = "Pradyun Gedam", email = "irack000@gmail.com"},
+#    {name = "Tzu-Ping Chung", email = "tzu-ping@example.com"}
+#]
+#maintainers = [
+#    {name = "Brett Cannon", email = "brett@example.com"}
+#]
+#description = "Lovely Spam! Wonderful Spam!"
+#readme = "README.rst"
+#license = {file = "LICENSE.txt"}
+#keywords = ["egg", "bacon", "sausage", "tomatoes", "Lobster Thermidor"]
+#classifiers = [
+#    "Development Status :: 4 - Beta",
+#    "Programming Language :: Python"
+#]
