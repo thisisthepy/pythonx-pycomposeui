@@ -1,9 +1,6 @@
-from pycomposeui.runtime import Composable, EmptyComposable, remember_saveable
-from pycomposeui.material3 import SimpleText, SimpleColumn, SimpleRow, SimpleButton
-from pycomposeui.ui import modifier, Alignment
-
-from java import jclass
-import traceback
+from pythonx.compose.runtime import Composable, ComposeApp, EmptyComposable, remember_saveable
+from pythonx.compose.material3 import SimpleText, SimpleColumn, SimpleRow, SimpleButton
+from pythonx.compose.ui import modifier, Alignment
 
 
 @Composable
@@ -41,15 +38,12 @@ class RichText(Composable):
         }))
 
 
-@Composable
-class App(Composable):
+@ComposeApp
+class MainApp:
     @staticmethod
     def compose():
         hi = remember_saveable("Hi?")
         count = remember_saveable(0)
-
-        def run_client():
-            import pycomposeui.client
 
         SimpleColumn(modifier, content=lambda: {
             UiTest(),
