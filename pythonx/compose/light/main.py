@@ -1,6 +1,6 @@
 import os
 import ctypes
-os.environ['JAVA_HOME'] = os.path.join(os.getcwd(), "out", "runtime")
+os.environ['JAVA_HOME'] = os.path.join(os.getcwd(), "release", "runtime")
 print("JVM Location:", os.environ['JAVA_HOME'], end="\n\n")
 
 
