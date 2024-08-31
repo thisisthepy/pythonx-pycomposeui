@@ -1,7 +1,7 @@
 import os
 import ctypes
 os.environ['JAVA_HOME'] = os.path.join(os.getcwd(), "release", "runtime")
-print("JVM Location:", os.environ['JAVA_HOME'], end="\n\n")
+print("JVM Location:", os.environ['JAVA_HOME'])
 
 
 if os.name == 'nt':
@@ -18,18 +18,11 @@ jvm_options = [
     '-Dswing.aatext=true'
 ]
 
-jpype.startJVM(classpath=["./build/libs/ComposeLight-1.0-all.jar", *jvm_options])
 
+def init_jvm():
+    jpype.startJVM(classpath=["./build/libs/ComposeLight-1.0-all.jar", *jvm_options])
 
-from org.example.project import PlatformKt
+    from org.example.project import PlatformKt
 
-try:
-    print(PlatformKt.getPlatform().getName())
-except Exception as e:
-    print(e)
-
-try:
-    from org.example.project import AppKt
-    AppKt.getApplication()
-except Exception as e:
-    print(e)
+    print("JVM Runtime Version:", PlatformKt.getPlatform().getName())
+    print()
