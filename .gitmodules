@@ -1,0 +1,3 @@
+[submodule "pythonx/compose/native"]
+	path = pythonx/compose/native
+	url = https://github.com/thisisthepy/swing-graalvm-demo.git
