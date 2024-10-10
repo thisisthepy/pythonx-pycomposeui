@@ -44,7 +44,7 @@ fun launch(content: () -> Unit = {}, register: (composer: Composer) -> Unit = {}
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "ComposeLight",
+            title = "ComposeLite",
         ) {
             register(currentComposer)
             App(content)

@@ -20,7 +20,7 @@ jvm_options = [
 
 
 def init_jvm():
-    jpype.startJVM(classpath=["./build/libs/ComposeLight-1.0-all.jar", *jvm_options])
+    jpype.startJVM(classpath=["./build/libs/ComposeLite-1.0-all.jar", *jvm_options])
 
     from org.example.project import PlatformKt
 
