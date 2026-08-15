@@ -1,0 +1,104 @@
+"""Load the `pythonx` adaptation layer that lives in `PythonMultiplatform`.
+
+The adapter is **not** a `.py` file. `PythonxAdapter.kt` holds it as a Kotlin raw-string literal and
+`Python3.exec`s it at run time, for the reason its KDoc gives: on iOS, androidNative and wasm there
+is no resource path a `.py` could be put on. `docs/pythonx-adapter-design.md` §2.5 records that as
+open.
+
+That leaves this repository unable to `import pythonx` the ordinary way, and unable to test against
+the layer it is supposed to sit on -- unless it reads the layer out of the Kotlin literal. That is
+what this module does. It is a *reader*, never a copy: if `PythonxAdapter.SOURCE` changes, these
+tests exercise the changed source on the next run, so the two cannot drift.
+
+`PythonMultiplatform` is read-only here. Nothing in this file writes to it.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+import types
+from pathlib import Path
+
+_MARKER = 'val SOURCE: String = """'
+
+_DEFAULT_HOME = Path(__file__).resolve().parents[2] / "PythonMultiplatform"
+
+_ADAPTER_KT = Path(
+    "python-multiplatform/src/commonMain/kotlin/python/multiplatform/ffi/pythonx/PythonxAdapter.kt"
+)
+
+
+class AdapterUnavailable(RuntimeError):
+    """`PythonMultiplatform` was not found, so there is nothing to test against."""
+
+
+def python_multiplatform_home() -> Path:
+    """Where the binder checkout is. `PYTHONMULTIPLATFORM_HOME` overrides the sibling default."""
+    override = os.environ.get("PYTHONMULTIPLATFORM_HOME")
+    return Path(override).expanduser().resolve() if override else _DEFAULT_HOME
+
+
+def adapter_source_path() -> Path:
+    return python_multiplatform_home() / _ADAPTER_KT
+
+
+def trim_indent(text: str) -> str:
+    """Kotlin's `String.trimIndent`, which is what the Kotlin side applies to the literal.
+
+    Python's `textwrap.dedent` is not the same function: it refuses to dedent when a blank line
+    carries no indentation, and it does not drop the leading and trailing blank line that a
+    raw-string literal always has. Getting this wrong yields a `SyntaxError` several hundred lines
+    into a string nobody can see, so it is spelled out rather than approximated.
+    """
+    lines = text.split("\n")
+    if lines and not lines[0].strip():
+        lines = lines[1:]
+    if lines and not lines[-1].strip():
+        lines = lines[:-1]
+    indents = [len(line) - len(line.lstrip()) for line in lines if line.strip()]
+    common = min(indents) if indents else 0
+    return "\n".join(line[common:] if line.strip() else "" for line in lines)
+
+
+def read_adapter_source() -> str:
+    """The Python inside `PythonxAdapter.SOURCE`, exactly as Kotlin would hand it to CPython."""
+    path = adapter_source_path()
+    if not path.is_file():
+        raise AdapterUnavailable(
+            f"{path} not found. Set PYTHONMULTIPLATFORM_HOME to the PythonMultiplatform checkout."
+        )
+    text = path.read_text(encoding="utf-8")
+    start = text.find(_MARKER)
+    if start < 0:
+        raise AdapterUnavailable(f"{path} no longer declares `{_MARKER}`")
+    start += len(_MARKER)
+    end = text.find('"""', start)
+    if end < 0:
+        raise AdapterUnavailable(f"{path}: the SOURCE literal is not terminated")
+    return trim_indent(text[start:end])
+
+
+def install(source: str | None = None) -> types.ModuleType:
+    """Reproduce `PythonxAdapter.DELIVERY`: build the `pythonx` module and exec the source into it.
+
+    Deliberately unconditional, unlike the Kotlin, which guards on `sys.modules`. A test wants a
+    fresh layer per case; a running interpreter wants one per process.
+    """
+    uninstall()
+    module = types.ModuleType("pythonx")
+    module.__path__ = []
+    sys.modules["pythonx"] = module
+    exec(compile(source or read_adapter_source(), "pythonx/__init__.py", "exec"), module.__dict__)
+    return module
+
+
+def uninstall() -> None:
+    """Drop `pythonx` and everything under it, and take the finder back off `sys.meta_path`."""
+    adapter = sys.modules.get("pythonx")
+    if adapter is not None:
+        finder_type = getattr(adapter, "_Finder", None)
+        if finder_type is not None:
+            sys.meta_path[:] = [f for f in sys.meta_path if not isinstance(f, finder_type)]
+    for name in [n for n in sys.modules if n == "pythonx" or n.startswith("pythonx.")]:
+        del sys.modules[name]
