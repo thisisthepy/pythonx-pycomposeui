@@ -13,7 +13,6 @@ from .dialogs import *
 from .dividers import *
 from .extended_fab import *
 from .fab import *
-from .icon_button import *
 from .menus import *
 from .navigation_bar import *
 from .navigation_drawer import *
@@ -65,17 +64,29 @@ from .icon import *
 # same class of evidence the `Text` deletion already established: the template is dead, not the
 # specific name. `tests/test_material3_module.py` asserts each file is gone.
 #
-# `icon_button.py` is only half gone. `IconButton` itself has the same proof
-# (`iconButtonComposesItsClickHandlerAndItsContent`), and `FilledIconButton`/`FilledTonalIconButton`/
-# `OutlinedIconButton` are the same template again -- all four are removed. `IconToggleButton` and
-# its `Filled`/`FilledTonal`/`Outlined` siblings stay, and so does `text_field.py`'s
-# `on_value_change` -- checked, not assumed: their `(Boolean) -> Unit` / `(String) -> Unit` slots
-# *are* bound (`ComposableBindingTest.kt:392` resolves `Checkbox.onCheckedChange` to exactly
-# `kotlin.Function1(kotlin.Boolean)->kotlin.Unit`, and that path predates `728809bc` -- it is
-# composable-slot binding from `a179b747`, a different mechanism from the plain-function-parameter
-# path `728809bc` actually opened). What is missing is the render proof: `ComposableRenderTest.kt`
-# states directly that a static render delivers no events, so a callback-shaped slot like
-# `onCheckedChange` cannot be shown to work by rasterising the way `IconButton`'s `on_click` was --
-# no test renders `IconToggleButton`, `Checkbox`, `Switch`, `TextField` or `OutlinedTextField` from
-# Python or drives their callback. Until that proof exists, in whatever shape it turns out to take,
-# these stay hand-written.
+# `icon_button.py` is now gone entirely, not just half. `IconButton` and its plain siblings already
+# had the render proof (`iconButtonComposesItsClickHandlerAndItsContent`, `a6742a1c`). The
+# `IconToggleButton` family (`checked: Boolean`, `onCheckedChange: (Boolean) -> Unit`) needed a
+# different shape of proof -- a static render delivers no events, so nothing about a callback slot
+# could be shown by rasterising -- and `PythonMultiplatform` commit `3fde8bd6`
+# (`CallbackDrivenRenderTest.kt`) supplies it: a real pointer press and release through
+# `ImageComposeScene.sendPointerEvent`, asserted to invoke the Python callback with the value Compose
+# handed it, on **two** declarations deliberately (`Checkbox` in `CheckboxKt`, then `Switch` in
+# `SwitchKt`, specifically to rule out a mechanism that only happens to work for one file). The
+# `IconToggleButton` family is a third declaration, in a third file (`IconButtonKt`), with that exact
+# same `(Boolean) -> Unit` shape -- the same class of generalisation this module already applies
+# within a single file for `Button`'s and `IconButton`'s untested siblings, extended here across
+# files because the render test itself was built to cross that boundary.
+#
+# `text_field.py`'s `TextField`/`OutlinedTextField` do **not** get the same conclusion.
+# `on_value_change` is `(String) -> Unit` -- a shape `CallbackDrivenRenderTest.kt` never drives, only
+# `(Boolean) -> Unit` -- so the slot is bound (checked, not assumed: `ComposableBindingTest.kt:392`)
+# but not proven end to end, and `text_field.py` stays hand-written until a render test drives a
+# `String`-valued callback the same way. `tests/test_material3_module.py` is what checks all of this.
+#
+# `checkbox.py` and `switch.py` are not files in the sense any of the above are: both have been
+# empty since before this package had an adaptation layer to defer to (`git log -p` on either shows
+# no non-empty version). `Checkbox`/`Switch` reach Python entirely through the walked table -- which
+# is exactly what `CallbackDrivenRenderTest.kt` exercises above -- and the empty files cost nothing
+# and assert nothing; they are left as they are rather than deleted, so as not to conflate "always
+# empty" with "emptied on evidence" in the file history.

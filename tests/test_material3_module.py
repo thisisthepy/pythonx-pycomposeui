@@ -23,14 +23,35 @@ class of finding, unconfirmed.
 `Button`, `Card`, `ListItem`, `Badge`/`BadgedBox`, `MaterialTheme` and (half of) `IconButton` are the
 same shape again, on `PythonMultiplatform` commit `a6742a1c` (`ComposableRenderTest.kt`): each renders
 from Python with no wrapper, content lambda and `on_click` included where the declaration has one.
-`IconToggleButton` and its siblings, and `text_field.py`'s `TextField`/`OutlinedTextField`, are
-deliberately *not* asserted dead here even though their slot types are confirmed bound
-(`ComposableBindingTest.kt:392`, `Checkbox.onCheckedChange` resolves to
-`kotlin.Function1(kotlin.Boolean)->kotlin.Unit`): no render test drives their callback, and
-`ComposableRenderTest.kt` states directly that a static render delivers no events, so that proof
-needs a different shape than the ink comparison `Button`/`IconButton` got. See
-`pythonx/compose/material3/__init__.py`'s trailing comment and `icon_button.py`'s module docstring
-for the full citations.
+
+`icon_button.py` is now gone entirely. `PythonMultiplatform` commit `3fde8bd6`
+(`CallbackDrivenRenderTest.kt`) is the render proof the previous version of this module's docstring
+said was missing: it drives `Checkbox`'s `onCheckedChange` with a real pointer press and release
+through `ImageComposeScene.sendPointerEvent` -- no window, no display -- and asserts the Python
+callback ran with the value Compose handed it (`_cb_events == [True]`) and that a fresh render shows
+the state it wrote. `theSameCallbackShapeIsDrivenOnASecondDeclaration` repeats it on `Switch`,
+deliberately: a different file (`SwitchKt` vs `CheckboxKt`), a different declaration, the identical
+`(Boolean) -> Unit` shape, written specifically to rule out "a lucky slot index that only happens to
+work for `Checkbox`". `IconToggleButton`/`FilledIconToggleButton`/`FilledTonalIconToggleButton`/
+`OutlinedIconToggleButton` are a *third* declaration (`IconButtonKt`, a third file again) with that
+same shape and the same parameter names (`checked: Boolean`, `onCheckedChange: (Boolean) -> Unit`) --
+the evidence the render test was built to generalise across declaration boundaries applies to them
+for the same reason it already covers two unrelated files. So the four toggle classes are deleted the
+same way `IconButton`'s plain siblings were.
+
+`text_field.py`'s `TextField`/`OutlinedTextField` are the one case this does **not** reach.
+`on_value_change` is `(String) -> Unit`, not `(Boolean) -> Unit` -- a different argument type that
+`CallbackDrivenRenderTest.kt` never drives. The callback-shape generalisation above is about the
+mechanism working across *declarations* with one proven *shape*; it says nothing about a shape that
+was never exercised. So `text_field.py` stays hand-written, and it is missing exactly one thing: a
+render test of the same family driving a `String`-valued callback (e.g. typing into a `TextField` and
+reading the string a fresh render shows), which does not exist yet in either repository.
+
+Nothing here proves Compose still renders `IconToggleButton` when it composes for real -- that
+render-with-real-Compose claim is what `CallbackDrivenRenderTest.kt` supplies, in the other
+repository, over `Checkbox` and `Switch` specifically. What this file checks is local: that the dead
+wrapper is gone and nothing in this repository still points at it, the same thing it already checked
+for `Text` and for `Button`'s siblings.
 """
 
 from __future__ import annotations
@@ -107,41 +128,37 @@ class TheRenderProvenWrappersAreGone(unittest.TestCase):
             )
 
 
-class IconButtonIsOnlyHalfGone(unittest.TestCase):
-    """`IconButton` has the same render proof as `Button` (`iconButtonComposesItsClickHandlerAndIts
-    Content`), and `FilledIconButton`/`FilledTonalIconButton`/`OutlinedIconButton` are the identical
-    template. The toggle variants stay: their `on_checked_change` slot type is confirmed *bound*
-    (`ComposableBindingTest.kt:392`), but no render test drives the callback -- see the module
-    docstring for why a static render cannot prove that the way it proved `on_click`.
+class TheIconButtonModuleIsEntirelyGone(unittest.TestCase):
+    """`IconButton` and its plain siblings had the same render proof as `Button`
+    (`iconButtonComposesItsClickHandlerAndItsContent`, commit `a6742a1c`) and were already deleted
+    here. The toggle variants (`IconToggleButton`, `FilledIconToggleButton`,
+    `FilledTonalIconToggleButton`, `OutlinedIconToggleButton`) are gone too now: `PythonMultiplatform`
+    commit `3fde8bd6` (`CallbackDrivenRenderTest.kt`) proves the `(Boolean) -> Unit` callback shape
+    they share with `Checkbox`/`Switch` is driven end to end by a real pointer event on two unrelated
+    declarations, and the toggle buttons are a third declaration with the identical shape. With both
+    halves proven, the whole file is redundant -- the same conclusion `text.py`'s deletion reached for
+    a single declaration, reached here for all four.
     """
 
-    def setUp(self):
-        self.source = (MATERIAL3_DIR / "icon_button.py").read_text(encoding="utf-8")
+    def test_icon_button_module_does_not_exist(self):
+        self.assertFalse(
+            (MATERIAL3_DIR / "icon_button.py").exists(),
+            "icon_button.py wrapped IconButton (already render-proven, a6742a1c) and the "
+            "IconToggleButton family, whose (Boolean) -> Unit callback shape is now render-proven "
+            "on two other declarations (3fde8bd6, CallbackDrivenRenderTest.kt)",
+        )
 
-    def test_the_four_render_proven_classes_are_gone(self):
-        for banned in ("class IconButton(", "class FilledIconButton(",
-                       "class FilledTonalIconButton(", "class OutlinedIconButton("):
-            self.assertNotIn(
-                banned, self.source,
-                f"{banned} is the same render-proven template Button's deletion already covers "
-                "(iconButtonComposesItsClickHandlerAndItsContent, commit a6742a1c)",
-            )
-
-    def test_the_toggle_variants_are_still_here(self):
-        # Not proven render-reachable yet (no test drives on_checked_change from a rendered frame),
-        # so removing these would not be backed by the same evidence the plain variants have.
-        for kept in ("class IconToggleButton(", "class FilledIconToggleButton(",
-                     "class FilledTonalIconToggleButton(", "class OutlinedIconToggleButton("):
-            self.assertIn(kept, self.source)
-
-    def test_icon_button_module_is_still_imported(self):
+    def test_material3_package_does_not_import_icon_button(self):
         source = MATERIAL3_INIT.read_text(encoding="utf-8")
-        self.assertIn("from .icon_button import", source)
+        self.assertNotIn("from .icon_button import", source)
 
 
 class TextFieldIsUntouchedPendingARenderProof(unittest.TestCase):
-    """`on_value_change` is `(String) -> Unit`, the same shape as `IconToggleButton`'s
-    `on_checked_change` and the same open question: bound at the type level, not proven end to end.
+    """`on_value_change` is `(String) -> Unit` -- a callback *shape* `CallbackDrivenRenderTest.kt`
+    never drives (it only exercises `(Boolean) -> Unit`, on `Checkbox` and `Switch`). The toggle
+    buttons could lean on that test because they share its exact shape; `TextField` cannot, so it
+    stays bound at the type level and unproven end to end until a render test drives a `String`
+    callback the way `3fde8bd6` drives a `Boolean` one.
     """
 
     def test_text_field_module_still_exists(self):
