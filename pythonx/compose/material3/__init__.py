@@ -26,7 +26,6 @@ from .snackbars import *
 from .swipe_to_dismiss import *
 from .switch import *
 from .tabs import *
-from .text_field import *
 from .time_picker import *
 from .tool_tip import *
 from .top_app_bar import *
@@ -78,11 +77,32 @@ from .icon import *
 # within a single file for `Button`'s and `IconButton`'s untested siblings, extended here across
 # files because the render test itself was built to cross that boundary.
 #
-# `text_field.py`'s `TextField`/`OutlinedTextField` do **not** get the same conclusion.
-# `on_value_change` is `(String) -> Unit` -- a shape `CallbackDrivenRenderTest.kt` never drives, only
-# `(Boolean) -> Unit` -- so the slot is bound (checked, not assumed: `ComposableBindingTest.kt:392`)
-# but not proven end to end, and `text_field.py` stays hand-written until a render test drives a
-# `String`-valued callback the same way. `tests/test_material3_module.py` is what checks all of this.
+# `text_field.py` is now gone too. `on_value_change` is `(String) -> Unit` -- a shape
+# `CallbackDrivenRenderTest.kt` did not used to drive, only `(Boolean) -> Unit` -- so it stayed
+# hand-written after `icon_button.py` went. `PythonMultiplatform` commit `cac8243f` closes that gap:
+# `typingIntoATextFieldInvokesThePythonCallbackWithTheStringAndTheNextRenderShowsIt` types a real key
+# event into a `pythonx`-bound `TextField`, asserts the Python callback received the string, and
+# asserts a fresh render shows it; `twoKeystrokesAccumulateAcrossTwoFreshScenes` repeats it across two
+# scenes to show the string accumulates rather than just landing once. Same bar the toggle buttons
+# met, same conclusion. `tests/test_material3_module.py` is what checks all of this.
+#
+# `icon.py` and `color_scheme.py` do **not** get the same conclusion, and are not going anywhere:
+# `PythonMultiplatform` commit `a6742a1c` pinned `Icon`, `lightColorScheme` and `darkColorScheme` as
+# *unreachable* through the walked table -- `Icon` needs an `ImageBitmap`/`ImageVector`/`Painter`
+# nothing walked can produce, and the two color-scheme factories need 36 `Color` parameters against a
+# 6-parameter omission cap -- which is a stronger, opposite finding from the one that deleted
+# `text.py`/`icon_button.py`/`text_field.py` (those were proven *redundant*; these were proven
+# *uncallable any way at all*). The hand-written wrapper is the only Python-facing record of that, so
+# it stays. What it no longer does is subclass `pythonx.compose.runtime.Composable`: `7d6c0a1`
+# replaced that name's 2024 *class* with a plain identity-decorator *function*, and a function cannot
+# be a base class -- `class Icon(Composable):` raised `TypeError` the moment this package was
+# imported, which broke every other, working declaration in this package along with it, not just the
+# two that are genuinely unreachable. Both classes are now defined plain, without a base, so importing
+# this package no longer depends on two declarations that can never be called anyway. Calling either
+# still fails (`self.composer` is never set -- nothing sets it, because the composer-threading base
+# class it depended on is exactly what `7d6c0a1` retired), which is accurate: neither declaration
+# works, before or after this fix. `tests/test_material3_module.py` checks the import no longer
+# raises.
 #
 # `checkbox.py` and `switch.py` are not files in the sense any of the above are: both have been
 # empty since before this package had an adaptation layer to defer to (`git log -p` on either shows

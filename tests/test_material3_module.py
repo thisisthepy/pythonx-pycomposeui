@@ -39,29 +39,47 @@ the evidence the render test was built to generalise across declaration boundari
 for the same reason it already covers two unrelated files. So the four toggle classes are deleted the
 same way `IconButton`'s plain siblings were.
 
-`text_field.py`'s `TextField`/`OutlinedTextField` are the one case this does **not** reach.
-`on_value_change` is `(String) -> Unit`, not `(Boolean) -> Unit` -- a different argument type that
-`CallbackDrivenRenderTest.kt` never drives. The callback-shape generalisation above is about the
-mechanism working across *declarations* with one proven *shape*; it says nothing about a shape that
-was never exercised. So `text_field.py` stays hand-written, and it is missing exactly one thing: a
-render test of the same family driving a `String`-valued callback (e.g. typing into a `TextField` and
-reading the string a fresh render shows), which does not exist yet in either repository.
+`text_field.py`'s `TextField`/`OutlinedTextField` were the one case the callback-shape
+generalisation above could not reach: `on_value_change` is `(String) -> Unit`, not
+`(Boolean) -> Unit`, and `CallbackDrivenRenderTest.kt` used to drive only the Boolean shape. That gap
+is closed now. `PythonMultiplatform` commit `cac8243f`
+(`typingIntoATextFieldInvokesThePythonCallbackWithTheStringAndTheNextRenderShowsIt` and
+`twoKeystrokesAccumulateAcrossTwoFreshScenes`, both in `CallbackDrivenRenderTest.kt`) delivers real
+key events through `ImageComposeScene.sendKeyEvent` to a `pythonx`-bound `TextField`, asserts the
+Python callback received the typed string, and asserts a fresh render shows it -- then repeats that
+across two scenes to show the string *accumulates* (`'h'` then `'hi'`), not just that one keystroke
+lands. That is the same evidentiary bar the `(Boolean) -> Unit` shape met for `Checkbox`/`Switch`,
+now met for `(String) -> Unit`, so `text_field.py` is gone the same way `icon_button.py` was.
 
-Nothing here proves Compose still renders `IconToggleButton` when it composes for real -- that
-render-with-real-Compose claim is what `CallbackDrivenRenderTest.kt` supplies, in the other
-repository, over `Checkbox` and `Switch` specifically. What this file checks is local: that the dead
-wrapper is gone and nothing in this repository still points at it, the same thing it already checked
-for `Text` and for `Button`'s siblings.
+Nothing here proves Compose still renders `IconToggleButton` or `TextField` when it composes for
+real -- that render-with-real-Compose claim is what `CallbackDrivenRenderTest.kt` supplies, in the
+other repository. What this file checks is local: that the dead wrapper is gone and nothing in this
+repository still points at it, the same thing it already checked for `Text` and for `Button`'s
+siblings.
 """
 
 from __future__ import annotations
 
+import importlib.util
+import sys
+import types
 import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 MATERIAL3_DIR = REPO / "pythonx" / "compose" / "material3"
 MATERIAL3_INIT = MATERIAL3_DIR / "__init__.py"
+
+
+def _load_by_path(path: Path, name: str) -> types.ModuleType:
+    """Load a `pythonx/...` file directly, the same way `test_modifier_module.py` and
+    `test_runtime_module.py` do (`pythonx` has no real filesystem path once the host's adapter has
+    installed a synthetic one, so tests read the file off disk instead).
+    """
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class TheTextWrapperIsGone(unittest.TestCase):
@@ -75,9 +93,10 @@ class TheTextWrapperIsGone(unittest.TestCase):
         )
 
     def test_material3_package_does_not_import_a_text_module(self):
-        # Substring, not `"text"` alone: `text_field.py` is a real, still-pending wrapper (`content=`
-        # gated, `docs/` lists it under the components waiting on lambda content) and must stay
-        # imported here. Only the exact `.text` submodule this test is about is banned.
+        # Substring guard: `.text` is the exact submodule this test is about. (`text_field.py` used
+        # to need the same care -- it was a real, still-pending wrapper -- but `TheTextFieldWrapperIsGone`
+        # now asserts it is deleted outright, so there is no longer a `.text`-prefixed sibling to
+        # avoid colliding with.)
         source = MATERIAL3_INIT.read_text(encoding="utf-8")
         self.assertNotIn("from .text import", source)
 
@@ -153,21 +172,101 @@ class TheIconButtonModuleIsEntirelyGone(unittest.TestCase):
         self.assertNotIn("from .icon_button import", source)
 
 
-class TextFieldIsUntouchedPendingARenderProof(unittest.TestCase):
-    """`on_value_change` is `(String) -> Unit` -- a callback *shape* `CallbackDrivenRenderTest.kt`
-    never drives (it only exercises `(Boolean) -> Unit`, on `Checkbox` and `Switch`). The toggle
-    buttons could lean on that test because they share its exact shape; `TextField` cannot, so it
-    stays bound at the type level and unproven end to end until a render test drives a `String`
-    callback the way `3fde8bd6` drives a `Boolean` one.
+class TheTextFieldWrapperIsGone(unittest.TestCase):
+    """`text_field.py` wrapped `TextField`/`OutlinedTextField`, whose `on_value_change` is
+    `(String) -> Unit`. `PythonMultiplatform` commit `cac8243f`
+    (`CallbackDrivenRenderTest.kt`'s `typingIntoATextFieldInvokesThePythonCallbackWithTheStringAndTheNextRenderShowsIt`
+    and `twoKeystrokesAccumulateAcrossTwoFreshScenes`) drives that exact shape end to end -- real key
+    events, a Python callback receiving the typed string, a fresh render showing it, and the string
+    accumulating across scenes -- the same bar `3fde8bd6` met for `(Boolean) -> Unit` on
+    `Checkbox`/`Switch` before `icon_button.py` was deleted on it. With that proof in hand the
+    hand-written wrapper is redundant the same way, so it is deleted the same way.
     """
 
-    def test_text_field_module_still_exists(self):
-        self.assertTrue((MATERIAL3_DIR / "text_field.py").exists())
+    def test_text_field_module_does_not_exist(self):
+        self.assertFalse(
+            (MATERIAL3_DIR / "text_field.py").exists(),
+            "text_field.py wrapped TextField/OutlinedTextField, whose (String) -> Unit callback is "
+            "now render-proven end to end (PythonMultiplatform commit cac8243f, "
+            "CallbackDrivenRenderTest.kt)",
+        )
 
-    def test_text_field_still_defines_its_two_classes(self):
-        source = (MATERIAL3_DIR / "text_field.py").read_text(encoding="utf-8")
-        self.assertIn("class TextField(", source)
-        self.assertIn("class OutlinedTextField(", source)
+    def test_material3_package_does_not_import_text_field(self):
+        source = MATERIAL3_INIT.read_text(encoding="utf-8")
+        self.assertNotIn("from .text_field import", source)
+
+
+class TheTwoUnreachableWrappersLoadWithoutCrashing(unittest.TestCase):
+    """`icon.py` (`Icon`) and `color_scheme.py` (`ColorScheme`/`lightColorScheme`/`darkColorScheme`)
+    are the two declarations `PythonMultiplatform` commit `a6742a1c` pinned as *unreachable* through
+    the walked table, not merely unconfirmed: `Icon` needs an `ImageBitmap`/`ImageVector`/`Painter`
+    nothing walked can produce, and the two color-scheme factories need 36 `Color` parameters against
+    the binding's 6-parameter omission cap. "Pinned unreachable" is a different conclusion from the
+    evidence that deleted `text.py`, `icon_button.py` and now `text_field.py`: those were proven
+    *redundant* (the walked table draws the same declaration with no wrapper), so the wrapper could
+    go. `Icon`/`ColorScheme` were proven *uncallable any way at all*, which makes the hand-written
+    wrapper the only Python-facing record of that fact -- so `text_field.py`'s reasoning does not
+    apply and these two files stay, per this task's own instruction.
+
+    Both files still wrote the 2024 shape, `class Icon(Composable):` /
+    `class ColorScheme(Composable):`, inheriting from `pythonx.compose.runtime.Composable`. Commit
+    `7d6c0a1` replaced that name's *class* with a plain identity-decorator *function* -- correct for
+    `UI.ipynb`'s `@Composable def Screen(): ...` usage, but a function cannot be a base class, so the
+    `class` statement itself now raises `TypeError` the moment either file is loaded. Because
+    `pythonx/compose/material3/__init__.py` imports both unconditionally (`from .icon import *`,
+    `from .color_scheme import *`), that `TypeError` previously took down `import
+    pythonx.compose.material3` as a whole -- every other, working declaration (`Button`, `Card`,
+    `Text`, ...) included, not just the two that are genuinely unreachable. That is the regression
+    this class checks is fixed: loading each file must not raise, which it can satisfy without
+    claiming `Icon`/`ColorScheme` now render (they still cannot -- see the class docstrings in each
+    file) by simply not inheriting from something that is no longer a class.
+    """
+
+    def setUp(self):
+        # `androidx` is not installed in this pure-Python checkout (`docs/pythonx-adapter-design.md`
+        # explains why: the real binding lives across a JVM/native boundary this repository's test
+        # suite has no access to). Both files only *reference* a handful of attributes off
+        # `androidx.compose.material3` at module scope and never call anything on them at import
+        # time, so a bare stand-in that has those attributes is enough to reach the `class` statement
+        # this test is actually about.
+        stub = types.ModuleType("androidx.compose.material3")
+        stub.IconKt = object()
+        stub.ColorSchemeKt = object()
+        stub.ColorScheme = object()
+        self._previous = {
+            name: sys.modules.get(name)
+            for name in ("androidx", "androidx.compose", "androidx.compose.material3")
+        }
+        sys.modules["androidx"] = types.ModuleType("androidx")
+        sys.modules["androidx.compose"] = types.ModuleType("androidx.compose")
+        sys.modules["androidx.compose.material3"] = stub
+        self.addCleanup(self._restore_androidx)
+
+    def _restore_androidx(self):
+        for name, previous in self._previous.items():
+            if previous is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = previous
+
+    def test_icon_module_loads_without_raising(self):
+        module = _load_by_path(MATERIAL3_DIR / "icon.py", "_test_material3_icon")
+        self.assertTrue(hasattr(module, "Icon"))
+
+    def test_color_scheme_module_loads_without_raising(self):
+        module = _load_by_path(MATERIAL3_DIR / "color_scheme.py", "_test_material3_color_scheme")
+        self.assertTrue(hasattr(module, "ColorScheme"))
+        self.assertTrue(hasattr(module, "lightColorScheme"))
+        self.assertTrue(hasattr(module, "darkColorScheme"))
+
+    def test_neither_file_inherits_from_the_now_functional_composable(self):
+        for filename in ("icon.py", "color_scheme.py"):
+            source = (MATERIAL3_DIR / filename).read_text(encoding="utf-8")
+            self.assertNotIn(
+                "(Composable)", source,
+                f"{filename} still subclasses Composable, which 7d6c0a1 made a plain function -- "
+                "that raises TypeError the moment the class statement runs",
+            )
 
 
 if __name__ == "__main__":

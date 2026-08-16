@@ -1,12 +1,20 @@
-from pythonx.compose.runtime import Composable
-
 from androidx.compose.material3 import IconKt
 
 __COMPILED_CODE__ = None
 Unit = None
 
-class Icon(Composable):
-    """ M3 icon """
+class Icon:
+    """ M3 icon.
+
+    Not usable -- kept only because `PythonMultiplatform` commit `a6742a1c` pinned `Icon` as
+    unreachable through the walked adaptation table (every overload needs an `ImageBitmap`,
+    `ImageVector` or `Painter`, and nothing walked produces one), so this hand-written wrapper is the
+    only Python-facing record of that. It does not subclass `pythonx.compose.runtime.Composable`
+    (`7d6c0a1` made that name a plain identity-decorator function, not a base class -- inheriting from
+    it raises `TypeError` at class-definition time, which used to break importing this whole package,
+    not just this declaration). `compose()` below still reaches for `self.composer`, which nothing
+    sets; calling it fails, which is correct, since the declaration cannot be reached this way either.
+    """
 
     def __init__(self):
         super().__init__()
