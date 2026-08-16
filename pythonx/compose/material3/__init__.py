@@ -41,6 +41,12 @@ from .top_app_bar import *
 from .surfaces import *
 from .scaffold import *
 
-# Icons and text
+# Icons
 from .icon import *
-from .text import *
+
+# `Text` is not here. `pythonx.compose.material3.Text` is a walked declaration -- the adaptation
+# layer builds it from the artefact table, the same way `pythonx.compose.ui.Modifier.padding` is
+# built and not hand-written (`pythonx/compose/ui/modifier.py`). A per-declaration `text.py` used to
+# be imported here; it duplicated what the layer already does and could not be repaired (it looked
+# `Text-<mangled>` up by a name-prefix search Kotlin's value-class mangling makes impossible -- see
+# `modifier.py`'s module docstring for why). `tests/test_material3_module.py` is what checks this.

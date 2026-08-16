@@ -61,6 +61,16 @@ def trim_indent(text: str) -> str:
     return "\n".join(line[common:] if line.strip() else "" for line in lines)
 
 
+_DOLLAR_ESCAPE = "${'$'}"
+"""Kotlin's own way to put a literal `$` in a raw string without it being read as interpolation.
+
+`SOURCE` uses this for `$composer`, `$changed` and `$default` -- Compose-compiler-synthesised
+parameter names that must reach Python as `$composer` etc. Kotlin evaluates the escape before
+`Python3.exec` ever sees the string; this reader has to do the same or the literal `${'$'}` text
+lands in the exec'd source and every name built from it is a `SyntaxError` instead of an identifier.
+"""
+
+
 def read_adapter_source() -> str:
     """The Python inside `PythonxAdapter.SOURCE`, exactly as Kotlin would hand it to CPython."""
     path = adapter_source_path()
@@ -76,7 +86,7 @@ def read_adapter_source() -> str:
     end = text.find('"""', start)
     if end < 0:
         raise AdapterUnavailable(f"{path}: the SOURCE literal is not terminated")
-    return trim_indent(text[start:end])
+    return trim_indent(text[start:end]).replace(_DOLLAR_ESCAPE, "$")
 
 
 def install(source: str | None = None) -> types.ModuleType:
