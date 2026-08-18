@@ -17,7 +17,10 @@ Python Wrapper for Kotlin Compose Multiplatform.
 
 ### Template ToDo list
 - [x] Composable Runtime
-- [x] Material3 Wrapper
+- [ ] Material3 Wrapper
+  - [x] Adaptation layer generated components (24 files verified by upstream render tests; 0-byte placeholders on disk as no wrappers are needed)
+  - [x] Hand-written fallback wrappers (`icon.py`, `color_scheme.py`)
+  - [ ] Unreachable declarations (3 files: `typography.py` & `shape.py` due to data class constructor omission in walker; `dynamic_color.py` due to Android-only API)
 
 
 ___
