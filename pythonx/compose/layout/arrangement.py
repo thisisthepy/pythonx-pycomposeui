@@ -1,14 +1,32 @@
 from __future__ import annotations
 
-class Arrangement:
-    """
-    Used to specify the horizontal arrangement of the layout's children in layouts like [Row].
+"""`pythonx/compose/layout/arrangement.py` -- what the adaptation layer now produces, and how to spell it.
 
-    NOTE: Arrangement and its constants (like `Arrangement.SpaceBetween`) are currently
-    blocked upstream. The `ArtifactScanner` only binds top-level functions and value-class
-    constructors; it does not generate bindings or object handles for static properties
-    or objects.
-    The previous chaquopy (`jclass`) code was removed because it dies at import time
-    (`ModuleNotFoundError: No module named 'java'`).
-    """
-    pass
+The same story as `pythonx/compose/ui/alignment.py`, and the same two facts. `Arrangement`'s constants
+are bound by the walker since `PythonMultiplatform`'s `80318c16`, and `6d896fba` is the proof: the
+same child in the same row lands at opposite edges under `Start` and `End`, which is what says the
+value crossed rather than that something merely composed.
+
+## The names the layer produces
+
+    Bottom  Center  End  SpaceAround  SpaceBetween  SpaceEvenly  Start  Top
+
+Read out of the walked table. Compose declares more (`spacedBy`, for one) -- those are functions
+rather than constants and reach Python through the ordinary function path, not this one.
+
+## They are called, not read
+
+    from pythonx.compose.foundation.layout import Row, Arrangement, width__Dp
+    from pythonx.compose.material3 import Text
+    from fixture.compose import emptyModifier
+
+    Row(
+        modifier=width__Dp(emptyModifier(), 80.0),
+        horizontal_arrangement=Arrangement.End(),      # with the parentheses
+        content=lambda scope: Text('X'),
+    )
+
+The width matters as much as the parentheses: a row wraps its content, so with no width constraint
+there is no spare space and every arrangement puts the child in the same place. Upstream's proof
+passed for that wrong reason once, before its opposite-end control caught it.
+"""

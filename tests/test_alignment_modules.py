@@ -66,23 +66,49 @@ class BothModulesLoadWithoutChaquopy(unittest.TestCase):
                 )
 
 
-class NeitherIsBoundYet(unittest.TestCase):
-    """When the scanner learns to bind object constants, this fails and the files get contents."""
+class TheLayerSuppliesThemNow(unittest.TestCase):
+    """The canary this file used to carry has fired.
 
-    def test_the_classes_expose_no_constants(self) -> None:
-        alignment = _load("alignment", MODULES["alignment"])
-        arrangement = _load("arrangement", MODULES["arrangement"])
-        for owner, attribute in (
-            (alignment.Alignment, "Center"),
-            (alignment.AbsoluteAlignment, "TopLeft"),
-            (arrangement.Arrangement, "SpaceBetween"),
-        ):
-            with self.subTest(owner=owner.__name__, attribute=attribute):
-                self.assertFalse(
-                    hasattr(owner, attribute),
-                    f"{owner.__name__}.{attribute} exists -- the scanner may now bind object "
-                    f"constants, in which case these modules should carry real bindings",
-                )
+    It asserted that neither module exposed a constant, and said that the day the scanner learned to
+    bind object constants it would fail and these files would get real contents. Upstream's
+    `80318c16` taught it, `6d896fba` proved a constant crosses, so the placeholder classes are gone
+    -- the layer produces the names and this package's rule is not to wrap what the layer produces.
+
+    What stays asserted is what a caller cannot read off the layer: which names exist, and that they
+    are called rather than read.
+    """
+
+    ALIGNMENT = (
+        "Bottom", "BottomCenter", "BottomEnd", "BottomStart", "Center", "CenterEnd",
+        "CenterHorizontally", "CenterStart", "CenterVertically", "End", "Start", "Top",
+        "TopCenter", "TopEnd", "TopStart",
+    )
+    ARRANGEMENT = ("Bottom", "Center", "End", "SpaceAround", "SpaceBetween", "SpaceEvenly", "Start", "Top")
+
+    def test_no_placeholder_classes_remain(self) -> None:
+        for name, path in MODULES.items():
+            with self.subTest(module=name):
+                module = _load(name, path)
+                classes = [
+                    attribute
+                    for attribute in vars(module).values()
+                    if isinstance(attribute, type) and attribute.__module__ == module.__name__
+                ]
+                self.assertEqual([], classes, f"{name} still declares a placeholder the layer supplies")
+
+    def test_each_module_names_the_constants_the_walker_binds(self) -> None:
+        for name, expected in (("alignment", self.ALIGNMENT), ("arrangement", self.ARRANGEMENT)):
+            doc = MODULES[name].read_text()
+            for constant in expected:
+                with self.subTest(module=name, constant=constant):
+                    self.assertIn(constant, doc, f"{name} does not name {constant}")
+
+    def test_each_module_says_the_constants_are_called(self) -> None:
+        """Reading one without calling it passes the function object and the dispatcher refuses it."""
+        for name, path in MODULES.items():
+            with self.subTest(module=name):
+                self.assertIn("()", path.read_text(), f"{name} does not show the call form")
+                self.assertIn("parentheses", path.read_text(), f"{name} does not say why")
 
 
 if __name__ == "__main__":
