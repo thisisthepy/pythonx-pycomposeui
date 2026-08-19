@@ -1,23 +1,15 @@
-import jvm
+"""`pythonx/compose/lite/app.py` -- 2024 JPype standalone prototype, retired.
 
-jvm.init_jvm()  # Initialize the JVM
+## What used to be here, and why it is gone
 
-from org.example.project import AppKt
+A sample standalone script importing `jvm.init_jvm()`, `org.example.project.AppKt`, and hand-written
+lite wrappers (`material3.Text`, `runtime.Composable`, `register_composer`).
 
-from material3 import Text, Spacer, Card, Button
-from runtime import Composable, register_composer
+This was part of an early 2024 JPype experiment before the architecture moved to `PythonxAdapter` and
+direct Kotlin/Native & JVM upcalls via PythonMultiplatform FFI.
 
+## Modern usage
 
-@Composable
-def MainScreen(*args, **kwargs):
-    """ Main Screen Composable """
-    Text("Welcome to Compose for Desktop with Python!", font_size=20.0)
-    Spacer(start=0, top=10.0, end=0, bottom=10.0)
-    Button(
-        on_click=lambda: print("Card Clicked"),
-        color=0xfff14f4d,
-        content=lambda: Text("This is a Card Composable", color=0xffffffff),
-    )
-
-
-AppKt.launch(MainScreen, register_composer)  # Launch the App
+Applications no longer initialize JPype or call `AppKt.launch()`. Instead, host integration via
+`PythonxAdapter` handles binding and `@Composable` evaluation.
+"""

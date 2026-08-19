@@ -1,11 +1,9 @@
-_composer = None
+"""`pythonx/compose/lite/runtime.py` -- 2024 JPype runtime composer registry, retired.
 
+## What used to be here, and why it is gone
 
-def register_composer(composer):
-    global _composer
-    print("INFO: Registering composer...")
-    _composer = composer
+A module-level `_composer` variable and `register_composer()` function used to pass a single JPype composer instance.
 
-
-def Composable(func, *args, **kwargs):
-    return lambda *args, **kwargs: func(*args, **kwargs, composer=_composer)
+Composer management is now handled dynamically by `PythonComposition` and `pythonx._bind_composable`
+during composition passes without needing a Python-side global composer registry.
+"""

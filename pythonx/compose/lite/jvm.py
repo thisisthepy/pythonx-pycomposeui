@@ -1,28 +1,9 @@
-import os
-import ctypes
-os.environ['JAVA_HOME'] = os.path.join(os.getcwd(), "release", "runtime")
-print("JVM Location:", os.environ['JAVA_HOME'])
+"""`pythonx/compose/lite/jvm.py` -- 2024 JPype JVM launcher, retired.
 
+## What used to be here, and why it is gone
 
-if os.name == 'nt':
-    ctypes.windll.user32.SetProcessDPIAware()
+`jpype.startJVM()` initialization script for loading `ComposeLite-1.0-all.jar` using JPype.
 
-
-import jpype.imports
-from jpype.types import *
-
-jvm_options = [
-    '-Dsun.java2d.uiScale=1.0',
-    '-Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel',
-    '-Dawt.useSystemAAFontSettings=on',
-    '-Dswing.aatext=true'
-]
-
-
-def init_jvm():
-    jpype.startJVM(classpath=["./build/libs/ComposeLite-1.0-all.jar", *jvm_options])
-
-    from org.example.project import PlatformKt
-
-    print("JVM Runtime Version:", PlatformKt.getPlatform().getName())
-    print()
+This repository no longer uses JPype for JVM lifecycle management. Interoperability is handled
+natively by `PythonMultiplatform` FFI and upcall trampolines.
+"""

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """`pythonx/compose/layout/arrangement.py` -- what the adaptation layer now produces, and how to spell it.
 
 The same story as `pythonx/compose/ui/alignment.py`, and the same two facts. `Arrangement`'s constants

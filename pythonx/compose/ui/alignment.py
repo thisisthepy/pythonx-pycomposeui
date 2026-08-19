@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """`pythonx/compose/ui/alignment.py` -- what the adaptation layer now produces, and how to spell it.
 
 `Alignment` and its constants used to be blocked: the walker bound top-level functions and, later,
